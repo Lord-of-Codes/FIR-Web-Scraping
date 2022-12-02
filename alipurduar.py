@@ -54,6 +54,7 @@ police_station ={
 #month day year
 
 excel_data = []
+last_file_reached = False
 
 print()
 while (date>=start_date):
@@ -95,6 +96,8 @@ while (date>=start_date):
 				"final link": "NA", "file name": ""})
 				continue
 
+			if !last_file_reached and intermediate_link < "fir1.php?fir=10640":
+				last_file_reached = True
 			response = requests.get(domain+intermediate_link+"&confirm=yes", headers=headers)
 			k = response.content
 			k = k.decode()
@@ -129,4 +132,8 @@ while (date>=start_date):
 		df = pd.DataFrame.from_dict(excel_data)
 		df.to_excel(path.joinpath(date.strftime("%B")+ " "+ year +".xslx"), index=False)
 		excel_data = []
+
+		# if last_file_reached:
+		# 	print("last file reached")
+		# 	break
 	date = date-timedelta(days=1)
