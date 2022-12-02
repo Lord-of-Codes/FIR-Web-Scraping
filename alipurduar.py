@@ -96,8 +96,8 @@ while (date>=start_date):
 				"final link": "NA", "file name": ""})
 				continue
 
-			if !last_file_reached and intermediate_link < "fir1.php?fir=10640":
-				last_file_reached = True
+			# if !last_file_reached and intermediate_link < "fir1.php?fir=10640":
+			# 	last_file_reached = True
 			response = requests.get(domain+intermediate_link+"&confirm=yes", headers=headers)
 			k = response.content
 			k = k.decode()
