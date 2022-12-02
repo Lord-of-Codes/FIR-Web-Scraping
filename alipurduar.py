@@ -7,9 +7,12 @@ from requests.structures import CaseInsensitiveDict
 from datetime import datetime, timedelta
 from pathlib import Path
 from bs4 import BeautifulSoup as bs 
+import pandas as pd
+import sys
 
-start_date = datetime(2022, 10, 1)
-date= datetime(2022, 10, 31)
+# year, month, day
+start_date = datetime(2022, 1, 1)
+date= datetime(2022, 8, 30)
 
 domain = "https://alipurduarpolice.org/"
 url = "https://alipurduarpolice.org/fir.php"
@@ -49,9 +52,14 @@ police_station ={
 
 #data = "start_date=10%2F01%2F2022&police_station=1&submit=Submit"
 #month day year
+
+excel_data = []
+
+print()
 while (date>=start_date):
 
 	print(date)
+
 	month = date.month
 	if month < 10:
 		month = "0"+str(month)
@@ -68,26 +76,57 @@ while (date>=start_date):
 
 	for i in range(1,14):
 
+		print(police_station[str(i)])
+
 		data = "start_date="+month+"%2F"+day+"%2F"+year+"&police_station="+str(i)+"&submit=Submit"
 		resp = requests.post(url, headers=headers, data=data)
 		soup = bs(resp.content, features="html.parser")
 		firs = soup.find_all("div", {"class": "con1"})
 
 		for fir in firs:
+			
 			title = fir.find("h4").string
 			section = fir.find("p").string
-			intermediate_link = fir.find("a").get("href")
+			try:
+				intermediate_link = fir.find("a").get("href")
+			except:
+				fir_present = "FIR NOT UPLOADED ON SITE"
+				excel_data.append({"title":title, "sections":section, "police station": police_station[str(i)] ,"FIR present": fir_present, "intermediate link": "NA", \
+				"final link": "NA", "file name": ""})
+				continue
+
 			response = requests.get(domain+intermediate_link+"&confirm=yes", headers=headers)
 			k = response.content
 			k = k.decode()
 			k = k.replace("<SCRIPT LANGUAGE='JavaScript'>window.location.href='", "")
 			k = k.replace("';</SCRIPT>","")
 
-			response = requests.get(domain+k, headers=headers)
+			final_link = domain+k
+			response = requests.get(final_link, headers=headers)
 			filename = k.replace('upload_image/download/', '')
 
+			if response.status_code == 404:
+				fir_present = "FIR MISSING FROM SERVER"
+				filename = ""
+				excel_data.append({"title":title, "sections":section, "police station": police_station[str(i)] ,"FIR present": fir_present, "intermediate link": domain+intermediate_link, \
+				"final link": final_link, "file name": filename})
+				continue
+
+			fir_present = "YES"
 			path = Path.cwd().joinpath(year, date.strftime("%B"), police_station[str(i)])
 			path.mkdir(parents=True, exist_ok=True)
 			path.joinpath(filename).write_bytes(response.content)
 
+			excel_data.append({"title":title, "sections":section, "police station": police_station[str(i)] ,"FIR present": fir_present, "intermediate link": domain+intermediate_link, \
+				"final link": final_link, "file name": filename})
+
+			
+
+	if date.day == datetime(2022, 1, 1).day:
+		path = 	Path.cwd().joinpath(year, date.strftime("%B"))
+		path.mkdir(parents=True, exist_ok=True)
+
+		df = pd.DataFrame.from_dict(excel_data)
+		df.to_excel(path.joinpath(date.strftime("%B")+ " "+ year +".xslx"), index=False)
+		excel_data = []
 	date = date-timedelta(days=1)
