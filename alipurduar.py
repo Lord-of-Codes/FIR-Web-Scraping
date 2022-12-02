@@ -11,8 +11,8 @@ import pandas as pd
 import sys
 
 # year, month, day
-start_date = datetime(2022, 1, 1)
-date= datetime(2022, 8, 30)
+start_date = datetime(2020, 1, 1)
+date= datetime(2020, 12, 31)
 
 domain = "https://alipurduarpolice.org/"
 url = "https://alipurduarpolice.org/fir.php"
